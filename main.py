@@ -1,22 +1,24 @@
 import os
 import csv
+import shutil
 import librosa
 import librosa.display
 import numpy as np
 import pyaudio
 import wave
 import time
-
+import requests
+import soundfile as sf
 import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import *
 
 # import matplotlib.pyplot as plt
 # import IPython.display as ipd
-# import soundfile as sf
 
 import random
 import pandas as pd
+from pip._internal.cli.cmdoptions import src
 
 from sklearn import metrics
 from sklearn import preprocessing
@@ -31,6 +33,7 @@ from sklearn.svm import SVC
 train_list = []
 test_list = []
 
+
 # create initial files
 def createCSV(header, mfcc_count, label, file_location):
     header = header
@@ -44,6 +47,7 @@ def createCSV(header, mfcc_count, label, file_location):
     with file:
         writer = csv.writer(file)
         writer.writerow(header)
+
 
 # iterate through directory, extract mfccs and labels, save to dataset_location
 def createInitialSet(directory, trim, threshold, dataset_location, is_cough, include_filename):
@@ -96,6 +100,7 @@ def createInitialSet(directory, trim, threshold, dataset_location, is_cough, inc
             i += 1
             print('Features successfully extracted from: ', audio_path)
 
+
 # store a set (the_list) into a csv file (filename)
 def storeSet(filename, the_list, num_samples, mfcc_count):
     print('\n\n', filename, ': ', len(the_list), ' recordings -->\n')
@@ -103,7 +108,7 @@ def storeSet(filename, the_list, num_samples, mfcc_count):
     to_append = ''
 
     for x in range(num_samples):
-        for y in range(1, mfcc_count+2):
+        for y in range(1, mfcc_count + 2):
             to_append += f' {the_list[x].iloc[y]}'
 
         print(the_list[x].iloc[0])
@@ -114,6 +119,7 @@ def storeSet(filename, the_list, num_samples, mfcc_count):
             writer.writerow(to_append.split())
 
         to_append = ''
+
 
 # train on the training and test set, output accuracy
 def train(mfcc_count, training_name, testing_name, label_known):
@@ -166,6 +172,7 @@ def train(mfcc_count, training_name, testing_name, label_known):
 
     return results
 
+
 # combine cough_test_sounds and non_cough_test_sounds into one testing_set.csv file
 def combine_test_data(label_known):
     if not label_known:
@@ -176,6 +183,7 @@ def combine_test_data(label_known):
                          True, 30, 'Datasets/testing_set.csv', 1, False)
         createInitialSet('Sound_Folders/Test_Sounds/Non_Cough_Test_Sounds',
                          False, 0, 'Datasets/testing_set.csv', 2, False)
+
 
 # test model on new test data from Test_Sounds folders
 def test_new_data(file_path, label_known, mfcc_count):
@@ -193,6 +201,7 @@ def test_new_data(file_path, label_known, mfcc_count):
             os.remove(file_path)
 
     return results
+
 
 # record audio
 def record_audio():
@@ -235,6 +244,7 @@ def record_audio():
 
     return WAVE_OUTPUT_FILENAME
 
+
 # randomise the data, create train_list & test_list
 def randomiseOrder(dataset_location, num_train_samples):
     dataset = pd.read_csv(dataset_location)
@@ -255,6 +265,7 @@ def randomiseOrder(dataset_location, num_train_samples):
         sample = dataset.iloc[current_index]
         test_list.append(sample)
         current_index += 1
+
 
 # train model and test
 def train_and_test(mfcc_count):
@@ -277,13 +288,12 @@ def train_and_test(mfcc_count):
     # train
     train(mfcc_count, 'Datasets/training_set.csv', 'Datasets/testing_set.csv', True)
 
-# GUI
-root = Tk()
 
 def recordAudio():
     path = record_audio()
     results = test_new_data(path, False, 39)
     showinfo("Window", results[0])
+
 
 def runTest():
     results = test_new_data('', True, 39)
@@ -293,22 +303,15 @@ def runTest():
         results_string += str(e) + '\n'
     showinfo("Results", results_string)
 
+
 def trainData():
     train_and_test(39)
 
-trainData = Button(root, text="Train the Classifier", padx=94, pady=20, command=trainData)
-trainData.grid(row=0, column=0)
-padLabel = Label(text=" ")
-padLabel.grid(row=1, column=0)
 
-runTest = Button(root, text="Run Test", padx=120, pady=20, command=runTest)
-runTest.grid(row=2, column=0)
-padLabel = Label(text=" ")
-padLabel.grid(row=3, column=0)
+def test_function():
+    print("Hello World!")
 
-recordAudio = Button(root, text="Record 3 Seconds of Audio", padx=71, pady=20, command=recordAudio)
-recordAudio.grid(row=4, column=0)
-# padLabel = Label(text=" ")
-# padLabel.grid(row=5, column=0)
 
-root.mainloop()
+def copy_uploaded_files_to_cough_test(list_of_files, location):
+    for file in list_of_files:
+        shutil.copy(file, location)
